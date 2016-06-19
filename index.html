@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta charset="utf-8">
+<title>TIME CHECKER</title>
+<meta name="keywords" content="">
+<meta name="description" content="">
+<meta property="og:title" content="">
+<meta property="og:type" content="website">
+<meta property="og:description" content="">
+<meta property="og:url" content="http://">
+<meta property="og:site_name" content="">
+<meta property="og:image" content="http://">
+<meta property="fb:app_id" content="">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<link href='https://fonts.googleapis.com/css?family=PT+Sans+Narrow' rel='stylesheet' type='text/css'>
+<link href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css" rel="stylesheet">
+<style>
+body {
+  font-family: 'PT Sans Narrow', sans-serif;
+}
+.site-heading {
+  padding:30px 0;
+  text-align:center;
+}
+.btn-submit {
+  -webkit-appearance:none;
+  -moz-appearance:none;
+  appearance:none;
+  width:100px;
+  height:37px;
+  background:#000;
+  color:#fff;
+  border:1px solid #000;
+  font-family: 'PT Sans Narrow', sans-serif;
+  font-size:16px;
+  cursor: pointer;
+}
+a {
+  color:#066f9a;
+}
+a:hover {
+  color:#3598c1;
+}
+.btn-set {
+  margin:0 0 30px;
+  text-align:center;
+}
+.tx-project {
+  width:200px;
+  margin:0 10px 10px 0;
+  padding:10px;
+}
+.btn-submit:hover {
+  opacity:.7;
+}
+.project-list:after {
+  content:"";
+  display: table;
+  clear:both;
+}
+ul {
+  list-style-type:none;
+}
+.project-list li {
+  float:left;
+  width: 200px;
+  margin:0 20px 10px 0;
+  padding:10px;
+  border: 1px solid #066f9a;
+  list-style-type:none;
+  text-align:center;
+}
+.btn-start i,.btn-stop i {
+  font-size:10px;
+  margin-right:5px;
+}
+.btn-delete i {
+  margin-right:5px;
+}
+.project-list span {
+  display: block;
+}
+.project-list a {
+  display: inline-block;
+  padding:0 10px 0 0;
+}
+.project-name {
+  margin:0 0 10px;
+  text-align:left;
+}
+.project-time {
+  margin:0 0 10px;
+  padding:10px 0 8px;
+  font-size:20px;
+  text-align:center;
+  background:#efefef;
+  line-height:1;
+}
+.project-time-hidden {
+  display: none !important;
+}
+.cr {
+  padding:50px 0;
+  text-align:center;
+}
+</style>
+</head>
+<body>
+<header>
+  <h1 class="site-heading">TIME CHECKER</h1>
+</header>
+
+<form>
+<ul class="btn-set">
+  <li class="btn-add"><input type="text" name="" placeholder="PROJECT NAME" class="tx-project"><input type="submit" value="ADD" class="btn-submit"></li>
+  <li class="btn-all-delete"><a href="#"><i class="fa fa-times" aria-hidden="true"></i>
+DELETE ALL PROJECT</a></li>
+</ul>
+</form>
+
+<ul class="project-list">
+</ul>
+
+<footer>
+  <p class="cr"><small>&copy; sakaki</small></p>
+</footer>
+
+<script src="http://code.jquery.com/jquery-2.1.4.js"></script>
+<script>
+$(function(){
+  'use strict';
+
+  var $list = $('.project-list');
+  var $input = $('.btn-add .tx-project');
+  var $projectName = $('.btn-add .tx-project');
+
+  var $this = $(this);
+
+  //ページを読み込んだ時にフォーカスが入力フォームにあたるように
+  $(window).on('load', function(){
+    $projectName.focus();
+  });
+
+  //プロジェクトを追加する関数
+  function addProject(text) {
+
+    //project itemを作成
+    var $li = $('<li class="item">');
+    var $text = $('<span class="project-name">').text(text);
+    var $text2 = $('<span class="project-time">').text('00:00:00');
+    var $textHidden = $('<span class="project-time-hidden">').text('1');
+    var $btnStart = $('<a href="#" class="btn-start">').append('<i class="fa fa-play" aria-hidden="true"></i>START');
+    var $btnStop = $('<a href="#" class="btn-stop">').append('<i class="fa fa-stop" aria-hidden="true"></i>STOP');
+    var $btnDelete = $('<a href="#" class="btn-delete">').append('<i class="fa fa-times" aria-hidden="true"></i>DELETE');
+    $li.append($text).append($text2).append($textHidden).append($btnStart).append($btnStop).append($btnDelete);
+
+    //ulに追加
+    $list.append($li);
+
+    $list.find('li').each(function(i){
+      $(this).attr('id', 'sw' + (i+1));
+    });
+  }
+
+  //フォームを送信した時の処理
+  $('form').on('submit', function(event){
+    event.preventDefault();
+
+    //テキストボックスに入っている文字列を取得
+    var text = $input.val();
+
+    //todoを追加
+    addProject(text);
+
+    $input.val('');
+    $projectName.focus();
+  });
+  //
+
+  //クラス作成＆コンストラクタ
+  var WorkTimer = function(_itemId){
+    var self = this;
+
+    this.ulParent = '.project-list';
+    this.continerSelecter = '#'+_itemId;
+    this.startBtnSelecter = '.btn-start';
+    this.stopBtnSelecter = '.btn-stop';
+    this.resetBtnSelecter = '.btn-reset';
+    this.timerTextSelecter = '.project-time';
+    this.timerTextSelecterHidden = '.project-time-hidden';
+    this.intervalId = null;
+
+    //クリックイベント登録
+    $(this.ulParent+'>'+this.continerSelecter+'>'+this.startBtnSelecter).click(function(e){
+      e.preventDefault();
+      self.start();
+    });
+    $(this.continerSelecter+'>'+this.stopBtnSelecter).click(function(e){
+      e.preventDefault();
+      self.stop();
+    });
+
+    // $(this.continerSelecter+'>'+this.resetBtnSelecter).click(function(e){
+    //   e.preventDefault();
+    //   self.reset();
+    // });
+  };
+
+  //各function
+  WorkTimer.prototype.start = function(){
+    this.run();
+  };
+  WorkTimer.prototype.stop = function(){
+    if(this.intervalId !== null){
+        clearInterval(this.intervalId);
+        this.intervalId = null; // add
+    }
+  };
+
+  WorkTimer.prototype.run = function(){
+    var self = this;
+    if (this.intervalId != null) {
+      return;
+    }
+    this.intervalId = setInterval(function(){
+
+        //動くコード
+        var passedTime = $(self.continerSelecter+'>'+self.timerTextSelecterHidden).text();
+
+        var seconds = passedTime % 60;
+        var minutes = Math.floor(passedTime / 60) % 60;
+        var hours = Math.floor(passedTime / 3600);
+
+        function zeroFill(num) {
+          return ('0' + num).slice(-2);
+        }
+
+        var displayTime = zeroFill(hours) + ':' + zeroFill(minutes) + ':' + zeroFill(seconds)
+        $(self.continerSelecter+'>'+self.timerTextSelecter).text(displayTime);
+
+        $(self.continerSelecter+'>'+self.timerTextSelecterHidden).text(parseInt(passedTime,10)+1);
+    }, 1000);
+  };
+
+  // main処理
+    $('form').on('submit', function(){
+      main();
+    });
+
+    var liCount = 0;
+    function main(){
+      liCount++;
+      var sw = 'sw' + liCount;
+      var sw = new WorkTimer(sw);
+    }
+
+  //各DELETEボタンを押した時の処理
+  $('.project-list').on('click', '.btn-delete',  function(){
+    $(this).parent('li').hide();
+    return false;
+  });
+
+  //ALL DELETEボタンを押した時の処理
+  $('.btn-all-delete').click(function(e){
+    e.preventDefault();
+    $('.project-list li').hide();
+  });
+
+});
+</script>
+</body>
+</html>
